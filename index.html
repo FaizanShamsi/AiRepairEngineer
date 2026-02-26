@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Pair Engineer</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0b0d;
+    --surface: #111318;
+    --surface2: #181c24;
+    --border: #222733;
+    --accent: #00e5a0;
+    --accent2: #7c6af7;
+    --accent3: #f7b26a;
+    --text: #e8eaf0;
+    --muted: #6b7280;
+    --danger: #f87171;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  header {
+    position: relative;
+    z-index: 1;
+    padding: 2rem 2.5rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .logo-icon {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem;
+  }
+
+  header h1 { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.02em; }
+  header h1 span { color: var(--accent); }
+
+  .badge {
+    margin-left: auto;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+  }
+
+  .main {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    height: calc(100vh - 81px);
+  }
+
+  .panel { padding: 1.5rem 2rem; display: flex; flex-direction: column; gap: 1rem; }
+  .panel-left { border-right: 1px solid var(--border); }
+
+  .panel-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .lang-tabs { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+  .lang-tab {
+    padding: 0.3rem 0.8rem;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .lang-tab:hover { border-color: var(--accent); color: var(--accent); }
+  .lang-tab.active { background: var(--accent); border-color: var(--accent); color: var(--bg); font-weight: 700; }
+
+  .code-wrapper {
+    position: relative;
+    flex: 1;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--surface);
+  }
+
+  .code-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot-r { background: #f87171; }
+  .dot-y { background: #fbbf24; }
+  .dot-g { background: #34d399; }
+
+  .code-filename { margin-left: 0.5rem; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--muted); }
+
+  textarea {
+    width: 100%;
+    height: calc(100% - 43px);
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    line-height: 1.6;
+    padding: 1rem;
+    resize: none;
+  }
+
+  textarea::placeholder { color: var(--muted); }
+
+  .analyze-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    padding: 0.9rem;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent), #00b87a);
+    border: none;
+    color: var(--bg);
+    font-family: 'Syne', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .analyze-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(0,229,160,0.3); }
+  .analyze-btn:active { transform: translateY(0); }
+  .analyze-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(0,0,0,0.3);
+    border-top-color: var(--bg);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .results { overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 1rem; }
+  .results::-webkit-scrollbar { width: 4px; }
+  .results::-webkit-scrollbar-track { background: transparent; }
+  .results::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  .empty-icon { font-size: 3rem; opacity: 0.4; }
+  .empty-state p { font-size: 0.9rem; line-height: 1.6; max-width: 260px; }
+
+  .result-card {
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    overflow: hidden;
+    animation: slideIn 0.3s ease forwards;
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  @keyframes slideIn { to { opacity: 1; transform: translateY(0); } }
+
+  .result-card:nth-child(1) { animation-delay: 0.05s; }
+  .result-card:nth-child(2) { animation-delay: 0.1s; }
+  .result-card:nth-child(3) { animation-delay: 0.15s; }
+  .result-card:nth-child(4) { animation-delay: 0.2s; }
+  .result-card:nth-child(5) { animation-delay: 0.25s; }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .card-icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+
+  .icon-flaw { background: rgba(248,113,113,0.15); }
+  .icon-test { background: rgba(124,106,247,0.15); }
+  .icon-refactor { background: rgba(247,178,106,0.15); }
+  .icon-positive { background: rgba(0,229,160,0.15); }
+  .icon-score { background: rgba(0,229,160,0.08); }
+
+  .card-title { font-size: 0.88rem; font-weight: 600; }
+  .card-subtitle { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--muted); }
+  .card-chevron { margin-left: auto; transition: transform 0.2s; color: var(--muted); }
+
+  .card-body { padding: 0 1rem 1rem; display: none; }
+  .card-body.open { display: block; }
+  .card-chevron.open { transform: rotate(180deg); }
+
+  .tag {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+  }
+
+  .tag-danger { background: rgba(248,113,113,0.15); color: var(--danger); }
+  .tag-info { background: rgba(124,106,247,0.15); color: #a89cf5; }
+  .tag-warn { background: rgba(247,178,106,0.15); color: var(--accent3); }
+  .tag-success { background: rgba(0,229,160,0.15); color: var(--accent); }
+
+  .issue-item {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    border-radius: 8px;
+    background: var(--surface2);
+    border-left: 3px solid;
+    font-size: 0.83rem;
+    line-height: 1.6;
+  }
+
+  .issue-item.flaw { border-color: var(--danger); }
+  .issue-item.test { border-color: var(--accent2); }
+  .issue-item.refactor { border-color: var(--accent3); }
+  .issue-item.positive { border-color: var(--accent); }
+
+  .issue-title { font-weight: 700; font-size: 0.82rem; margin-bottom: 0.3rem; }
+  .issue-desc { color: #b0b8c8; }
+
+  pre {
+    margin-top: 0.5rem;
+    padding: 0.6rem 0.75rem;
+    background: var(--bg);
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    overflow-x: auto;
+    color: var(--accent);
+    border: 1px solid var(--border);
+    white-space: pre-wrap;
+  }
+
+  .score-section { padding: 0.85rem 1rem; }
+
+  .score-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+
+  .score-label { font-size: 0.72rem; color: var(--muted); margin-bottom: 0.3rem; }
+
+  .score-bar-track { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+
+  .score-bar-fill { height: 100%; border-radius: 3px; transition: width 1s cubic-bezier(0.4,0,0.2,1); width: 0%; }
+
+  .fill-green { background: var(--accent); }
+  .fill-purple { background: var(--accent2); }
+  .fill-orange { background: var(--accent3); }
+
+  .score-num { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text); margin-top: 0.2rem; }
+
+  .overall-score { display: flex; align-items: baseline; gap: 0.3rem; margin-bottom: 1rem; }
+  .overall-num { font-size: 2.5rem; font-weight: 800; line-height: 1; }
+  .overall-denom { color: var(--muted); font-size: 1rem; }
+
+  .error-msg {
+    padding: 1rem;
+    border-radius: 8px;
+    background: rgba(248,113,113,0.1);
+    border: 1px solid rgba(248,113,113,0.3);
+    color: var(--danger);
+    font-size: 0.85rem;
+    line-height: 1.6;
+  }
+
+  @media (max-width: 768px) {
+    .main { grid-template-columns: 1fr; height: auto; }
+    .panel-left { border-right: none; border-bottom: 1px solid var(--border); }
+    .panel { height: 60vh; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-icon">⚡</div>
+  <h1>AI Pair <span>Engineer</span></h1>
+  <div class="badge">POWERED BY CLAUDE</div>
+</header>
+
+<div class="main">
+  <div class="panel panel-left">
+    <div class="panel-label">// select language</div>
+    <div class="lang-tabs">
+      <button class="lang-tab active" onclick="setLang(this,'Python')">Python</button>
+      <button class="lang-tab" onclick="setLang(this,'JavaScript')">JavaScript</button>
+      <button class="lang-tab" onclick="setLang(this,'TypeScript')">TypeScript</button>
+      <button class="lang-tab" onclick="setLang(this,'Java')">Java</button>
+      <button class="lang-tab" onclick="setLang(this,'Go')">Go</button>
+      <button class="lang-tab" onclick="setLang(this,'SQL')">SQL</button>
+    </div>
+
+    <div class="code-wrapper">
+      <div class="code-header">
+        <div class="dot dot-r"></div>
+        <div class="dot dot-y"></div>
+        <div class="dot dot-g"></div>
+        <span class="code-filename" id="filename">main.py</span>
+      </div>
+      <textarea id="codeInput" placeholder="// Paste your code here..."></textarea>
+    </div>
+
+    <button class="analyze-btn" id="analyzeBtn" onclick="analyzeCode()">
+      <div class="spinner" id="spinner"></div>
+      <span id="btnText">⚡ Analyze with AI Pair Engineer</span>
+    </button>
+  </div>
+
+  <div class="panel">
+    <div class="panel-label">// analysis results</div>
+    <div class="results" id="results">
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon">🤖</div>
+        <p>Paste your code and click analyze. Your AI pair engineer will detect flaws, propose tests, and suggest refactors.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let selectedLang = 'Python';
+  const exts = { Python:'main.py', JavaScript:'index.js', TypeScript:'main.ts', Java:'Main.java', Go:'main.go', SQL:'query.sql' };
+
+  function setLang(btn, lang) {
+    document.querySelectorAll('.lang-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    selectedLang = lang;
+    document.getElementById('filename').textContent = exts[lang] || 'code.txt';
+  }
+
+  function toggleCard(id) {
+    const body = document.getElementById('body-' + id);
+    const chevron = document.getElementById('chev-' + id);
+    body.classList.toggle('open');
+    chevron.classList.toggle('open');
+  }
+
+  async function analyzeCode() {
+    const code = document.getElementById('codeInput').value.trim();
+    if (!code) { alert('Please paste some code first!'); return; }
+
+    const btn = document.getElementById('analyzeBtn');
+    const spinner = document.getElementById('spinner');
+    const btnText = document.getElementById('btnText');
+    btn.disabled = true;
+    spinner.style.display = 'block';
+    btnText.textContent = 'Analyzing...';
+
+    try {
+      const response = await fetch('/.netlify/functions/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, language: selectedLang })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) throw new Error(result.error || 'Analysis failed');
+
+      renderResults(result);
+    } catch(e) {
+      document.getElementById('results').innerHTML = `<div class="error-msg">❌ <strong>Error:</strong> ${e.message}</div>`;
+    } finally {
+      btn.disabled = false;
+      spinner.style.display = 'none';
+      btnText.textContent = '⚡ Analyze with AI Pair Engineer';
+    }
+  }
+
+  function renderResults(r) {
+    const results = document.getElementById('results');
+    const scoreColor = r.overallScore >= 75 ? '#00e5a0' : r.overallScore >= 50 ? '#f7b26a' : '#f87171';
+
+    results.innerHTML = `
+      <div class="result-card">
+        <div class="card-header" onclick="toggleCard('score')">
+          <div class="card-icon icon-score">📊</div>
+          <div>
+            <div class="card-title">Code Health Score</div>
+            <div class="card-subtitle">Overall quality assessment</div>
+          </div>
+          <div class="card-chevron open" id="chev-score">▾</div>
+        </div>
+        <div class="card-body open" id="body-score">
+          <div class="score-section">
+            <div class="overall-score">
+              <span class="overall-num" style="color:${scoreColor}">${r.overallScore}</span>
+              <span class="overall-denom">/100</span>
+            </div>
+            <div class="score-grid">
+              ${scoreItem('Readability', r.scores.readability, 'fill-green', 'readability')}
+              ${scoreItem('Maintainability', r.scores.maintainability, 'fill-purple', 'maintainability')}
+              ${scoreItem('Testability', r.scores.testability, 'fill-orange', 'testability')}
+              ${scoreItem('Performance', r.scores.performance, 'fill-green', 'performance')}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="result-card">
+        <div class="card-header" onclick="toggleCard('flaws')">
+          <div class="card-icon icon-flaw">🐛</div>
+          <div>
+            <div class="card-title">Design Flaws Detected</div>
+            <div class="card-subtitle">${r.designFlaws.length} issue(s) found</div>
+          </div>
+          <div class="card-chevron open" id="chev-flaws">▾</div>
+        </div>
+        <div class="card-body open" id="body-flaws">
+          ${r.designFlaws.map(f => `
+            <div class="issue-item flaw">
+              <div class="issue-title"><span class="tag tag-danger">${f.severity.toUpperCase()}</span> ${f.title}</div>
+              <div class="issue-desc">${f.description}</div>
+              ${f.fix ? `<pre>${esc(f.fix)}</pre>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div class="result-card">
+        <div class="card-header" onclick="toggleCard('tests')">
+          <div class="card-icon icon-test">🧪</div>
+          <div>
+            <div class="card-title">Proposed Tests</div>
+            <div class="card-subtitle">${r.proposedTests.length} test(s) suggested</div>
+          </div>
+          <div class="card-chevron" id="chev-tests">▾</div>
+        </div>
+        <div class="card-body" id="body-tests">
+          ${r.proposedTests.map(t => `
+            <div class="issue-item test">
+              <div class="issue-title"><span class="tag tag-info">TEST</span> ${t.title}</div>
+              <div class="issue-desc">${t.description}</div>
+              ${t.testCode ? `<pre>${esc(t.testCode)}</pre>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div class="result-card">
+        <div class="card-header" onclick="toggleCard('refactor')">
+          <div class="card-icon icon-refactor">🔧</div>
+          <div>
+            <div class="card-title">Refactoring Suggestions</div>
+            <div class="card-subtitle">${r.refactoring.length} suggestion(s)</div>
+          </div>
+          <div class="card-chevron" id="chev-refactor">▾</div>
+        </div>
+        <div class="card-body" id="body-refactor">
+          ${r.refactoring.map(ref => `
+            <div class="issue-item refactor">
+              <div class="issue-title"><span class="tag tag-warn">REFACTOR</span> ${ref.title}</div>
+              <div class="issue-desc">${ref.description}</div>
+              ${ref.before ? `<div style="font-size:0.7rem;color:var(--muted);margin-top:0.5rem;">Before:</div><pre style="color:var(--danger)">${esc(ref.before)}</pre>` : ''}
+              ${ref.after ? `<div style="font-size:0.7rem;color:var(--muted);margin-top:0.3rem;">After:</div><pre>${esc(ref.after)}</pre>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div class="result-card">
+        <div class="card-header" onclick="toggleCard('pos')">
+          <div class="card-icon icon-positive">✅</div>
+          <div>
+            <div class="card-title">What's Working Well</div>
+            <div class="card-subtitle">${r.positives.length} positive(s) noted</div>
+          </div>
+          <div class="card-chevron" id="chev-pos">▾</div>
+        </div>
+        <div class="card-body" id="body-pos">
+          ${r.positives.map(p => `
+            <div class="issue-item positive">
+              <div class="issue-title"><span class="tag tag-success">GOOD</span> ${p.title}</div>
+              <div class="issue-desc">${p.description}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+
+    setTimeout(() => {
+      animBar('readability', r.scores.readability);
+      animBar('maintainability', r.scores.maintainability);
+      animBar('testability', r.scores.testability);
+      animBar('performance', r.scores.performance);
+    }, 100);
+  }
+
+  function scoreItem(label, val, cls, id) {
+    return `
+      <div class="score-item">
+        <div class="score-label">${label}</div>
+        <div class="score-bar-track">
+          <div class="score-bar-fill ${cls}" id="bar-${id}"></div>
+        </div>
+        <div class="score-num">${val}/100</div>
+      </div>
+    `;
+  }
+
+  function animBar(id, val) {
+    const el = document.getElementById('bar-' + id);
+    if (el) el.style.width = val + '%';
+  }
+
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+</script>
+</body>
+</html>
